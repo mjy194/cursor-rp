@@ -13,9 +13,7 @@ DEBUG=false
 LANG_CODE=""
 MODIFIER_EXTRA_PARAMS=""
 MODIFIER_PATH=""
-PATCH=false
 PORT="3000"
-RESTORE=false
 SKIP_HOSTS=false
 SUDO="sudo "
 SUFFIX=".local"
@@ -80,7 +78,6 @@ show_info() {
     echo "当前配置:"
     echo "  语言(Lang): ${LANG_CODE}"
     echo "  AppImage路径: ${APPIMAGE_PATH:-未设置}"
-    echo "  操作模式: $([ "${PATCH}" = "true" ] && echo "修补模式" || echo "恢复模式")"
     echo "  端口: ${PORT}"
     echo "  后缀: ${SUFFIX}"
     echo "  跳过hosts修改: $([ "${SKIP_HOSTS}" = "true" ] && echo "是" || echo "否")"
@@ -92,7 +89,6 @@ show_info() {
     echo "Current Configuration:"
     echo "  Language: ${LANG_CODE}"
     echo "  AppImage Path: ${APPIMAGE_PATH:-Not set}"
-    echo "  Operation Mode: $([ "${PATCH}" = "true" ] && echo "Patch" || echo "Restore")"
     echo "  Port: ${PORT}"
     echo "  Suffix: ${SUFFIX}"
     echo "  Skip Hosts Modification: $([ "${SKIP_HOSTS}" = "true" ] && echo "Yes" || echo "No")"
@@ -134,6 +130,7 @@ init_lang() {
     MSG_WGET_CURL_NOT_FOUND="错误：未安装 wget 或 curl。请先安装其中一个。"
     MSG_RESTORING_COMPLETE="恢复完成！"
     MSG_PATCHING_COMPLETE="修补完成！"
+    MSG_PROCESS_COMPLETE="处理完成！"
     MSG_CREATE_TEMP_DIR="创建临时目录"
     MSG_ERROR_TEMP_DIR="无法创建临时目录"
     MSG_ERROR_MODIFIER_NOT_FOUND="错误：未找到修改器程序"
@@ -166,6 +163,7 @@ init_lang() {
     MSG_WGET_CURL_NOT_FOUND="Error: Neither wget nor curl is installed. Please install one of them first."
     MSG_RESTORING_COMPLETE="Restoring complete!"
     MSG_PATCHING_COMPLETE="Patching complete!"
+    MSG_PROCESS_COMPLETE="AppImage process complete!"
     MSG_CREATE_TEMP_DIR="Creating temporary directory"
     MSG_ERROR_TEMP_DIR="Cannot create temporary directory"
     MSG_ERROR_MODIFIER_NOT_FOUND="Error: Modifier program not found"
@@ -210,14 +208,6 @@ parse_params() {
         SUFFIX="$2"
         shift 2
         ;;
-      --patch)
-        PATCH=true
-        shift
-        ;;
-      --restore)
-        RESTORE=true
-        shift
-        ;;
       --skip-hosts)
         SKIP_HOSTS=true
         shift
@@ -240,15 +230,6 @@ parse_params() {
   # 设置语言代码
   LANG_CODE=${LANG_CODE:-$(detect_system_lang)}
   init_lang
-
-  # 验证操作模式
-  if ! $PATCH && ! $RESTORE; then
-    echo "${MSG_ERROR_INVALID_MODE}"
-    exit 1
-  elif $PATCH && $RESTORE; then
-    echo "${MSG_ERROR_MODE_CONFLICT}"
-    exit 1
-  fi
 
   # 检查 AppImage 路径
   if [ -z "${APPIMAGE_PATH}" ]; then
@@ -344,14 +325,6 @@ prepare() {
 
 # 处理 AppImage
 process_appimage() {
-  local mode="patch"
-  if $PATCH; then
-    echo "${MSG_PATCHING}"
-  else
-    echo "${MSG_RESTORING}"
-    mode="restore"
-  fi
-
   echo "${MSG_FOUND_APPIMAGE} ${APPIMAGE_PATH}"
 
   # 复制 AppImage 到临时目录
@@ -408,11 +381,7 @@ process_appimage() {
   rm -rf "${TEMP_DIR}"
   echo "${MSG_REMOVING_TEMP_DIR}: ${TEMP_DIR}"
 
-  if [ "${mode}" == "patch" ]; then
-    echo "${MSG_PATCHING_COMPLETE}"
-  else
-    echo "${MSG_RESTORING_COMPLETE}"
-  fi
+  echo "${MSG_PROCESS_COMPLETE}"
 
   exit 0
 }
