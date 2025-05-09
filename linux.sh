@@ -14,12 +14,13 @@ LANG_CODE=""
 MODIFIER_EXTRA_PARAMS=""
 MODIFIER_PATH=""
 PATCH=false
-PORT="2999"
+PORT="3000"
 RESTORE=false
 SKIP_HOSTS=false
 SUDO="sudo "
 SUFFIX=".local"
 TEMP_DIR="/tmp/cursor-patcher-$(date +%s)"
+TOOL_NAME="$(basename "$0")"
 
 # 检测系统语言
 detect_system_lang() {
@@ -48,7 +49,7 @@ show_help() {
     echo "  -h, --help          显示帮助信息"
     echo "  -l, --lang CODE       设置语言 (zh/en)"
     echo "  -a, --appimage <PATH>     指定 AppImage 路径"
-    echo "  -p, --port <PORT>       指定端口号 (默认: 2999)"
+    echo "  -p, --port <PORT>       指定端口号 (默认: 3000)"
     echo "  -s, --suffix <SUFFIX>     指定后缀 (默认: .local)"
     echo "  --patch           执行修补操作"
     echo "  --restore           执行恢复操作"
@@ -62,7 +63,7 @@ show_help() {
     echo "  -h, --help          Show this message"
     echo "  -l, --lang CODE       Set language (zh/en)"
     echo "  -a, --appimage <PATH>     Cursor AppImage path"
-    echo "  -p, --port <PORT>       Specify port number (default: 2999)"
+    echo "  -p, --port <PORT>       Specify port number (default: 3000)"
     echo "  -s, --suffix <SUFFIX>     Specify suffix (default: .local)"
     echo "  --patch           Apply patch"
     echo "  --restore           Restore original"
@@ -174,7 +175,7 @@ init_lang() {
 
 # 解析命令参数
 parse_params() {
-  options=$(getopt -o hl:a:p:s: --long help,lang:,appimage:,port:,suffix:,patch,restore,skip-hosts,debug -n 'cursor-rp-linux.sh' -- "$@")
+  options=$(getopt -o hl:a:p:s: --long help,lang:,appimage:,port:,suffix:,patch,restore,skip-hosts,debug -n '$TOOL_NAME' -- "$@")
   if [ $? -ne 0 ]; then
     echo "错误的选项" >&2
     exit 1
@@ -398,7 +399,8 @@ process_appimage() {
   fi
 
   # 将修改后的 AppImage 复制回原位置
-  cp -f "${temp_appimage}" "${APPIMAGE_PATH}"
+  sudo cp -f "${APPIMAGE_PATH}" "${APPIMAGE_PATH}_$(date +%s)"
+  sudo cp -f "${temp_appimage}" "${APPIMAGE_PATH}"
   echo "${MSG_REPACK_SUCCESS} ${APPIMAGE_PATH}"
 
   # 清理临时文件
